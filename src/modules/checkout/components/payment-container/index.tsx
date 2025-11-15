@@ -29,10 +29,8 @@ const PaymentContainer: React.FC<PaymentContainerProps> = ({
   const isDevelopment = process.env.NODE_ENV === "development"
 
   return (
-    <RadioGroupOption
+    <div
       key={paymentProviderId}
-      value={paymentProviderId}
-      disabled={disabled}
       className={clx(
         "flex flex-col gap-y-2 text-small-regular cursor-pointer py-4 border rounded-rounded px-8 mb-2 hover:shadow-borders-interactive-with-active",
         {
@@ -59,7 +57,7 @@ const PaymentContainer: React.FC<PaymentContainerProps> = ({
         <PaymentTest className="small:hidden text-[10px]" />
       )}
       {children}
-    </RadioGroupOption>
+    </div>
   )
 }
 
@@ -72,11 +70,11 @@ export const StripeCardContainer = ({
   disabled = false,
   setCardBrand,
   setError,
-  setCardComplete,
+  onCardCompleteChange,
 }: Omit<PaymentContainerProps, "children"> & {
   setCardBrand: (brand: string) => void
   setError: (error: string | null) => void
-  setCardComplete: (complete: boolean) => void
+  onCardCompleteChange: (complete: boolean) => void
 }) => {
   const stripeReady = useContext(StripeContext)
 
@@ -117,7 +115,7 @@ export const StripeCardContainer = ({
                   e.brand && e.brand.charAt(0).toUpperCase() + e.brand.slice(1)
                 )
                 setError(e.error?.message || null)
-                setCardComplete(e.complete)
+                onCardCompleteChange(e.complete)
               }}
             />
           </div>

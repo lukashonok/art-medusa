@@ -9,6 +9,7 @@ import OrderDetails from "@modules/order/components/order-details"
 import OrderSummary from "@modules/order/components/order-summary"
 import ShippingDetails from "@modules/order/components/shipping-details"
 import React from "react"
+import PaymentButton from "../components/payment-button"
 
 type OrderDetailsTemplateProps = {
   order: HttpTypes.StoreOrder
@@ -33,10 +34,11 @@ const OrderDetailsTemplate: React.FC<OrderDetailsTemplateProps> = ({
         className="flex flex-col gap-4 h-full bg-white w-full"
         data-testid="order-details-container"
       >
-        <OrderDetails order={order} showStatus />
+        <OrderDetails order={order} />
         <Items order={order} />
         <ShippingDetails order={order} />
         <OrderSummary order={order} />
+        <PaymentButton order={order} />
         <Help />
       </div>
     </div>

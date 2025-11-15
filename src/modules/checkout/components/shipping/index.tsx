@@ -107,11 +107,11 @@ const Shipping: React.FC<ShippingProps> = ({
   }, [availableShippingMethods])
 
   const handleEdit = () => {
-    router.push(pathname + "?step=delivery", { scroll: false })
+    router.push("?step=delivery", { scroll: false })
   }
 
   const handleSubmit = () => {
-    router.push(pathname + "?step=payment", { scroll: false })
+    router.push("?step=payment", { scroll: false })
   }
 
   const handleSetShippingMethod = async (

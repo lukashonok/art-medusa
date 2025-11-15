@@ -7,7 +7,6 @@ import Items from "@modules/order/components/items"
 import OnboardingCta from "@modules/order/components/onboarding-cta"
 import OrderDetails from "@modules/order/components/order-details"
 import ShippingDetails from "@modules/order/components/shipping-details"
-import PaymentDetails from "@modules/order/components/payment-details"
 import { HttpTypes } from "@medusajs/types"
 
 type OrderCompletedTemplateProps = {
@@ -43,7 +42,7 @@ export default async function OrderCompletedTemplate({
           <Items order={order} />
           <CartTotals totals={order} />
           <ShippingDetails order={order} />
-          <PaymentDetails order={order} />
+          {/* <PaymentDetails order={order} /> */}
           <Help />
         </div>
       </div>

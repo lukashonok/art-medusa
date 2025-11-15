@@ -14,8 +14,6 @@ export const metadata: Metadata = {
 export default async function Orders() {
   const orders = await listOrders()
 
-  console.log("Loaded orders", orders)
-
   if (!orders) {
     notFound()
   }

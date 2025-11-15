@@ -34,6 +34,14 @@ export const paymentInfoMap: Record<
     title: "Manual Payment",
     icon: <CreditCard />,
   },
+  "pp_stripe-blik_stripe": {
+    title: "BLIK",
+    icon: <CreditCard />,
+  },
+  "pp_stripe-przelewy24_stripe": {
+    title: "Przelewy24",
+    icon: <CreditCard />,
+  },
   // Add more payment providers here
 }
 

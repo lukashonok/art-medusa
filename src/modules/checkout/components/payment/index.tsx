@@ -65,7 +65,7 @@ const Payment = ({
   )
 
   const handleEdit = () => {
-    router.push(pathname + "?" + createQueryString("step", "payment"), {
+    router.push("?" + createQueryString("step", "payment"), {
       scroll: false,
     })
   }
@@ -87,7 +87,7 @@ const Payment = ({
 
       if (!shouldInputCard) {
         return router.push(
-          pathname + "?" + createQueryString("step", "review"),
+          "?" + createQueryString("step", "review"),
           {
             scroll: false,
           }

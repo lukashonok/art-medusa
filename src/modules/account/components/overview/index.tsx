@@ -104,7 +104,7 @@ const Overview = ({ customer, orders }: OverviewProps) => {
                               </span>
                               <span data-testid="order-amount">
                                 {convertToLocale({
-                                  amount: order.total,
+                                  amount: order.total ?? 0,
                                   currency_code: order.currency_code,
                                 })}
                               </span>
