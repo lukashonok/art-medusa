@@ -77,46 +77,25 @@ jobs:
         if: steps.changes.outputs.storefront == 'true'
         uses: actions/checkout@v4
         with:
-          path: backend
+          path: medusa-starter-default
 
       - name: Start backend
         if: steps.changes.outputs.storefront == 'true'
         run: |
-          cd backend
+          cd medusa-starter-default
           docker compose -f compose.yaml up --build -d
           
       - name: Wait for backend to be healthy
         if: steps.changes.outputs.storefront == 'true'
         run: |
-          cd backend
+          cd medusa-starter-default
           timeout 300 bash -c 'until docker compose ps | grep backend-server | grep -q "healthy"; do sleep 5; done'
 
       - name: Seed backend with data
         if: steps.changes.outputs.storefront == 'true'
         run: |
-          cd backend
+          cd medusa-starter-default
           docker compose -f compose.seed.yaml run --rm seed
-
-      - name: Get publishable key
-        if: steps.changes.outputs.storefront == 'true'
-        id: key
-        run: |
-          export BACKEND_URL="http://localhost:9000"
-          
-          # Login and get access token
-          export ACCESS_TOKEN=$(curl -s -X POST "${BACKEND_URL}/auth/user/emailpass" \
-            -H 'Content-Type: application/json' \
-            --data-raw '{
-              "email": "admin@medusa-test.com",
-              "password": "supersecret"
-            }' | jq -r '.token')
-
-          # Get the API key token
-          export PUBLISHABLE_KEY=$(curl -s "${BACKEND_URL}/admin/api-keys" \
-            -H "Authorization: Bearer ${ACCESS_TOKEN}" | jq -r '.api_keys[0].token')
-            
-          echo "PUBLISHABLE_KEY=${PUBLISHABLE_KEY}" >> $GITHUB_OUTPUT
-          echo "Got key: ${PUBLISHABLE_KEY:0:20}..."
 
       - name: Set up Docker Buildx
         if: steps.changes.outputs.storefront == 'true'
@@ -136,11 +115,10 @@ jobs:
           context: storefront
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/art-medusa-storefront:latest
+          network: host
           build-args: |
-            NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY=${{ steps.key.outputs.PUBLISHABLE_KEY }}
-            MEDUSA_BACKEND_URL=http://host.docker.internal:9000
-          add-hosts: |
-            host.docker.internal=host-gateway
+            NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY=${{ secrets.MEDUSA_PUBLISHABLE_KEY }}
+            MEDUSA_BACKEND_URL=http://localhost:9000
           cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/art-medusa-storefront:buildcache
           cache-to: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/art-medusa-storefront:buildcache,mode=max
 
