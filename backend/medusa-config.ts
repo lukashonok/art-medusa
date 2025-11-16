@@ -15,7 +15,6 @@ module.exports = defineConfig({
     }
   },
   modules: [
-
     {
       resolve: "@medusajs/medusa/cache-redis",
       options: {
