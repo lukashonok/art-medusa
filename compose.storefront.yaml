@@ -1,7 +1,7 @@
 services:
   frontend:
     build:
-      context: medusa-starter-storefront-default
+      context: storefront
       args:
         - MEDUSA_BACKEND_URL=http://host.docker.internal:9000
         - NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY=pk_a7edbcd5170fd1a1c396891c41dcb05c2ca571b337f6e49918b02590c9f0f65f

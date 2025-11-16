@@ -77,24 +77,24 @@ jobs:
         if: steps.changes.outputs.storefront == 'true'
         uses: actions/checkout@v4
         with:
-          path: medusa-starter-default
+          path: backend
 
       - name: Start backend
         if: steps.changes.outputs.storefront == 'true'
         run: |
-          cd medusa-starter-default
+          cd backend
           docker compose -f compose.yaml up --build -d
           
       - name: Wait for backend to be healthy
         if: steps.changes.outputs.storefront == 'true'
         run: |
-          cd medusa-starter-default
+          cd backend
           timeout 300 bash -c 'until docker compose ps | grep backend-server | grep -q "healthy"; do sleep 5; done'
 
       - name: Seed backend with data
         if: steps.changes.outputs.storefront == 'true'
         run: |
-          cd medusa-starter-default
+          cd backend
           docker compose -f compose.seed.yaml run --rm seed
 
       - name: Get publishable key
