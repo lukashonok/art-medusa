@@ -1,125 +1,281 @@
-<p align="center">
-  <a href="https://www.medusajs.com">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://user-images.githubusercontent.com/59018053/229103275-b5e482bb-4601-46e6-8142-244f531cebdb.svg">
-    <source media="(prefers-color-scheme: light)" srcset="https://user-images.githubusercontent.com/59018053/229103726-e5b529a3-9b3f-4970-8a1f-c6af37f087bf.svg">
-    <img alt="Medusa logo" src="https://user-images.githubusercontent.com/59018053/229103726-e5b529a3-9b3f-4970-8a1f-c6af37f087bf.svg">
-    </picture>
-  </a>
-</p>
+# Project Starter Templates for Medusa Commerce Platform
 
-<h1 align="center">
-  Medusa Next.js Starter Template
-</h1>
+![v2 Build Status](https://img.shields.io/github/actions/workflow/status/u11d-com/medusa-starter/docker_build_v2.yml?branch=v2&label=Medusa%20v2%20build) ![v1 Build Status](https://img.shields.io/github/actions/workflow/status/u11d-com/medusa-starter/docker_build_v1.yml?branch=v1&label=Medusa%20v1%20build)
 
-<p align="center">
-Combine Medusa's modules for your commerce backend with the newest Next.js 15 features for a performant storefront.</p>
+## Introduction
 
-<p align="center">
-  <a href="https://github.com/medusajs/medusa/blob/master/CONTRIBUTING.md">
-    <img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat" alt="PRs welcome!" />
-  </a>
-  <a href="https://discord.gg/xpCwq3Kfn8">
-    <img src="https://img.shields.io/badge/chat-on%20discord-7289DA.svg" alt="Discord Chat" />
-  </a>
-  <a href="https://twitter.com/intent/follow?screen_name=medusajs">
-    <img src="https://img.shields.io/twitter/follow/medusajs.svg?label=Follow%20@medusajs" alt="Follow @medusajs" />
-  </a>
-</p>
+This project provides developers with starter templates for both the backend and storefront using the **Medusa framework**. The primary objectives are to demonstrate:
+
+- How to configure a development environment using **Docker Compose**.
+- How to structure a **GitHub workflow pipeline** for building and deploying a Medusa project.
+
+## About Medusa
+
+[Medusa](https://medusajs.com/) is a modular commerce framework designed for building advanced e-commerce applications without reinventing core commerce logic. Medusa’s flexible architecture allows developers to create:
+
+- Scalable e-commerce stores
+- Multi-vendor marketplaces
+- Any application requiring foundational commerce functionality
+
+All modules are open-source and available on npm, providing full customization and extensibility.
+
+## Project Structure Overview
+
+The `medusa-starter` repository is organized to provide a clear, modular structure for managing both the backend and storefront of a Medusa-based commerce platform. The setup leverages Docker Compose for service orchestration and includes essential configuration files for streamlined development, testing, and deployment.
+
+### Directory Layout
+
+```shell
+medusa-starter/
+├── .github/                 # GitHub workflows and automation scripts
+├── .vscode/                 # VS Code workspace settings
+├── backend/                 # Medusa backend services
+│   ├── .dockerignore        # Defines files to exclude from Docker builds
+│   ├── Dockerfile           # Instructions to build the backend Docker image
+│   └── start.sh             # Script to handle migrations, admin user creation, and start backend
+├── storefront/              # Next.js storefront application
+│   ├── .dockerignore        # Defines files to exclude from Docker builds
+│   └── Dockerfile           # Instructions to build the storefront Docker image
+├── .editorconfig            # Maintains consistent coding styles
+├── compose.seed.yaml        # Docker Compose file for database seeding
+├── compose.storefront.yaml  # Docker Compose file for storefront services
+├── compose.yaml             # Main Docker Compose file orchestrating all services
+├── LICENSE                  # License information
+└── README.md                # Project documentation
+```
+
+### Key Components
+
+- `.github/` - Contains GitHub Actions workflows to automate CI/CD processes, ensuring smooth integration and deployment pipelines.
+- `.vscode/` - Houses workspace settings to standardize development environments across teams using Visual Studio Code.
+- `backend/` - This directory includes the Medusa backend setup:
+  - `.dockerignore`: Lists files and directories to ignore during Docker builds.
+  - `Dockerfile`: Defines the build instructions for the backend container.
+  - `start.sh`: A shell script to automate database migrations, create an admin user if necessary, and start the Medusa backend in cluster mode.
+  - `medusa-config.ts`: Example of configuration for Medusa.
+- `storefront/` - The Next.js storefront application:
+  - `.dockerignore`: Specifies files to exclude from the Docker image build.
+  - `Dockerfile`: Instructions for building the storefront Docker image.
+  - `next.config.js`: Example of configuration for Next.js deployment in standalone mode.
+- Docker Compose Files:
+  - `compose.yaml`: The primary file orchestrating PostgreSQL, Redis, and the Medusa backend services.
+  - `compose.storefront.yaml`: Manages the storefront container separately to ensure modular service management.
+  - `compose.seed.yaml`: Handles database seeding tasks.
+  - `compose.db.yaml`: Can be used to deploy database separately.
+- Other Configurations:
+  - `.editorconfig`: Ensures consistent code formatting across different editors and IDEs.
+  - `LICENSE`: Provides licensing information for the repository.
+  - `README.md`: Offers comprehensive project documentation.
+
+## Installation & Setup
 
 ### Prerequisites
 
-To use the [Next.js Starter Template](https://medusajs.com/nextjs-commerce/), you should have a Medusa server running locally on port 9000.
-For a quick setup, run:
+Ensure you have the following installed:
+
+- [Docker](https://docs.docker.com/get-started/get-docker/)
+- [Docker Compose](https://docs.docker.com/compose/install/)
+- [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
+
+### Cloning the Repository
+
+Run the following command:
 
 ```shell
-npx create-medusa-app@latest
+git clone https://github.com/u11d-com/medusa-starter.git
+cd medusa-starter
 ```
 
-Check out [create-medusa-app docs](https://docs.medusajs.com/learn/installation) for more details and troubleshooting.
+## Setup Using Medusa CLI
 
-# Overview
+You can use the `create-medusa-app` command to generate a starter Medusa project.
 
-The Medusa Next.js Starter is built with:
+### 1. Start Databases
 
-- [Next.js](https://nextjs.org/)
-- [Tailwind CSS](https://tailwindcss.com/)
-- [Typescript](https://www.typescriptlang.org/)
-- [Medusa](https://medusajs.com/)
-
-Features include:
-
-- Full ecommerce support:
-  - Product Detail Page
-  - Product Overview Page
-  - Product Collections
-  - Cart
-  - Checkout with Stripe
-  - User Accounts
-  - Order Details
-- Full Next.js 15 support:
-  - App Router
-  - Next fetching/caching
-  - Server Components
-  - Server Actions
-  - Streaming
-  - Static Pre-Rendering
-
-# Quickstart
-
-### Setting up the environment variables
-
-Navigate into your projects directory and get your environment variables ready:
+Run the following command to start the database services:
 
 ```shell
-cd nextjs-starter-medusa/
-mv .env.template .env.local
+docker compose -f compose.db.yaml up -d
 ```
 
-### Install dependencies
+- **PostgreSQL** will be available at `localhost:5432`.
+- **Redis** will be available at `localhost:6379`.
+- Default credentials:
 
-Use Yarn to install all dependencies.
+  ```plaintext
+  POSTGRES_USER: medusa-starter
+  POSTGRES_PASSWORD: medusa-password
+  POSTGRES_DB: medusa-starter
+  ```
+
+Modify `compose.db.yaml` to change these values.
+
+### 2. Create a Medusa Project
+
+Follow the [Medusa installation guide](https://docs.medusajs.com/learn/installation) to create your first project using `create-medusa-app`.
+
+### 3. Add Containerization
+
+Use the Docker setup provided in this repository to containerize your project. Copy files from the `backend` and `storefront` directories to their respective locations in your project. Then, use these files to build Docker images for your application.
+
+## Setup Using Git
+
+### 1. Initialize the Backend Repository
+
+Run the following commands:
 
 ```shell
-yarn
+git clone https://github.com/medusajs/medusa-starter-default.git
 ```
 
-### Start developing
+Copy and replace files from `backend` folder to created directory.
 
-You are now ready to start up your project.
+This sets up the Medusa backend starter template (Medusa v2).
+
+### 2. Initialize the Storefront Repository
+
+Run the following commands:
 
 ```shell
-yarn dev
+git clone https://github.com/medusajs/nextjs-starter-medusa.git
 ```
 
-### Open the code and start customizing
+Copy and replace files from `storefront` folder to created directory.
 
-Your site is now running at http://localhost:8000!
+This sets up the Medusa storefront starter template (Medusa v2).
 
-# Payment integrations
+---
 
-By default this starter supports the following payment integrations
+## Running the Development Environment
 
-- [Stripe](https://stripe.com/)
-
-To enable the integrations you need to add the following to your `.env.local` file:
+### 1. Start the Medusa Backend and Services
 
 ```shell
-NEXT_PUBLIC_STRIPE_KEY=<your-stripe-public-key>
+docker compose up --build -d
 ```
 
-You'll also need to setup the integrations in your Medusa server. See the [Medusa documentation](https://docs.medusajs.com) for more information on how to configure [Stripe](https://docs.medusajs.com/resources/commerce-modules/payment/payment-provider/stripe#main).
+### 2. Seed the Database
 
-# Resources
+Run this command once (unless the database volume is deleted):
 
-## Learn more about Medusa
+```shell
+docker compose -f compose.seed.yaml run --rm seed
+```
 
-- [Website](https://www.medusajs.com/)
-- [GitHub](https://github.com/medusajs)
-- [Documentation](https://docs.medusajs.com/)
+### 3. Start the Storefront
 
-## Learn more about Next.js
+You need NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY value from Medusa backend admin panel.
+Log in to `localhost:9000/app` with credentials from `compose.yaml` file:
 
-- [Website](https://nextjs.org/)
-- [GitHub](https://github.com/vercel/next.js)
-- [Documentation](https://nextjs.org/docs)
+  ```plaintext
+  MEDUSA_ADMIN_EMAIL: admin@medusa-test.com
+  MEDUSA_ADMIN_PASSWORD: supersecret
+  ```
+
+You can find publishable key value in dashboard settings. Change it's value in `compose.storefront.yaml` file and run command:
+
+```shell
+docker compose -f compose.storefront.yaml up --build
+```
+
+### 4. Stopping the Development Environment
+
+To stop services, run:
+
+- Stop the storefront:
+
+  ```shell
+  docker compose -f compose.storefront.yaml down
+  ```
+
+- Stop the backend and other services:
+
+  ```shell
+  docker compose down
+  ```
+
+---
+
+## Notes
+
+- `docker compose up -d` initializes the backend services for Medusa.
+- The database seeding step pre-populates the database with sample data and is only required when setting up a new database.
+- Storefront services are started separately for better modularity.
+- Shutting down the environment when not in use frees system resources.
+
+Your environment should now be up and running! You can access the storefront and backend services as configured in the compose files.
+
+---
+
+## Customization
+
+This project is designed to be flexible.
+
+### Replacing the Default Templates
+
+You can replace the backend and storefront templates with your own code while preserving the following essential files:
+
+- `Dockerfile`
+- `.dockerignore`
+
+### Backend Customization
+
+The backend runs on **Node.js** and can be customized using **TypeScript**. Replace the provided template with your own implementation while ensuring compatibility with Medusa.
+
+### Storefront Customization
+
+The storefront runs on **Next.js**. To create a new storefront, use:
+
+```shell
+npx create-next-app@latest
+```
+
+Once your custom backend and storefront are ready, the provided Docker Compose configuration will handle deployment.
+
+---
+
+## Deployment
+
+This project includes a pre-configured **GitHub workflow pipeline** for building and deploying Medusa-based applications.
+
+### Image Tags
+
+The workflow generates images with the following tags:
+
+- `medusajs-backend:<tag>`
+- `medusajs-storefront:<tag>`
+
+(Replace `<tag>` with the version or commit identifier.)
+
+For Medusa v1, we provide the latest available starter configuration:
+
+- `medusajs-backend:1.20.10-latest`
+- `medusajs-storefront:1.18.1-latest`
+
+For Medusa v2, we provide the latest available starter configuration:
+
+- `medusajs-backend:<medusa-version>-latest`
+- `medusajs-storefront:<medusa-version>-latest`
+
+### Customizing Deployment
+
+The GitHub workflow can be customized for different cloud providers (e.g., AWS, Google Cloud). Modify `.github/workflows` to:
+
+- Add deployment steps.
+- Configure cloud provider settings.
+- Integrate with CI/CD pipelines.
+
+This ensures flexibility for production environments.
+
+---
+
+## Appendices
+
+### Contact Information
+
+For support or inquiries, visit:
+
+[Uninterrupted](https://u11d.com)
+
+---
+:heart: *Technology made with passion by [u11d](https://u11d.com)*
