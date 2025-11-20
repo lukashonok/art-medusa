@@ -10,6 +10,7 @@ import PaymentContainer, {
   StripeCardContainer,
 } from "@modules/checkout/components/payment-container"
 import Divider from "@modules/common/components/divider"
+import Spinner from "@modules/common/icons/spinner"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useCallback, useEffect, useState } from "react"
 import BlikPayment from "../blik-payment"
@@ -161,15 +162,23 @@ const Payment = ({
                       )
                       break
                     case "pp_stripe-blik_stripe":
+                      const blikReady =
+                        activeSession?.provider_id === "pp_stripe-blik_stripe"
+
                       content = (
                         <PaymentContainer
                           paymentInfoMap={paymentInfoMap}
                           paymentProviderId={paymentMethod.id}
                           selectedPaymentOptionId={selectedPaymentMethod}
                         >
-                          {selectedPaymentMethod === paymentMethod.id && (
-                            <BlikPayment />
-                          )}
+                          {selectedPaymentMethod === paymentMethod.id &&
+                            (blikReady ? (
+                              <BlikPayment />
+                            ) : (
+                              <div className="flex items-center justify-center w-full min-h-[12rem]">
+                                <Spinner />
+                              </div>
+                            ))}
                         </PaymentContainer>
                       )
                       break
