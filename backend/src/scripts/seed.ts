@@ -12,6 +12,7 @@ import {
   createRegionsWorkflow,
   createSalesChannelsWorkflow,
   createShippingOptionsWorkflow,
+  CreateShippingOptionsWorkflowInput,
   createShippingProfilesWorkflow,
   createStockLocationsWorkflow,
   createTaxRegionsWorkflow,
@@ -229,7 +230,7 @@ export default async function seedDemoData({ container }: ExecArgs) {
     shippingProfile = shippingProfileResult[0];
   }
 
-  const fulfillmentSetEurope = await fulfillmentModuleService.createFulfillmentSets({
+  const fulfillmentSetEurope = await fulfillmentModuleService.createFulfillmentSets([{
     name: "Europe Delivery",
     type: "shipping",
     service_zones: [
@@ -241,9 +242,9 @@ export default async function seedDemoData({ container }: ExecArgs) {
         })),
       },
     ],
-  });
+  }]);
 
-  const fulfillmentSetUS = await fulfillmentModuleService.createFulfillmentSets({
+  const fulfillmentSetUS = await fulfillmentModuleService.createFulfillmentSets([{
     name: "US Delivery",
     type: "shipping",
     service_zones: [
@@ -255,9 +256,9 @@ export default async function seedDemoData({ container }: ExecArgs) {
         })),
       },
     ],
-  });
+  }]);
 
-  const fulfillmentSetPL = await fulfillmentModuleService.createFulfillmentSets({
+  const fulfillmentSetPL = await fulfillmentModuleService.createFulfillmentSets([{
     name: "PL Delivery",
     type: "shipping",
     service_zones: [
@@ -269,7 +270,7 @@ export default async function seedDemoData({ container }: ExecArgs) {
         })),
       },
     ],
-  });
+  }]);
 
   const fulfillmentSets = [
     fulfillmentSetEurope,
@@ -285,7 +286,7 @@ export default async function seedDemoData({ container }: ExecArgs) {
         )!.id,
       },
       [Modules.FULFILLMENT]: {
-        fulfillment_set_id: fulfillmentSetEurope.id,
+        fulfillment_set_id: fulfillmentSetEurope[0].id,
       },
     },
     {
@@ -295,7 +296,7 @@ export default async function seedDemoData({ container }: ExecArgs) {
         )!.id,
       },
       [Modules.FULFILLMENT]: {
-        fulfillment_set_id: fulfillmentSetUS.id,
+        fulfillment_set_id: fulfillmentSetUS[0].id,
       },
     },
     {
@@ -305,7 +306,7 @@ export default async function seedDemoData({ container }: ExecArgs) {
         )!.id,
       },
       [Modules.FULFILLMENT]: {
-        fulfillment_set_id: fulfillmentSetPL.id,
+        fulfillment_set_id: fulfillmentSetPL[0].id,
       },
     },
   ]);
@@ -317,7 +318,7 @@ export default async function seedDemoData({ container }: ExecArgs) {
           name: "Standard Delivery",
           price_type: "flat",
           provider_id: "manual_manual",
-          service_zone_id: fulfillmentSet.service_zones[0].id,
+          service_zone_id: fulfillmentSet[0].service_zones[0].id,
           shipping_profile_id: shippingProfile!.id,
           type: {
             label: "Standard",
@@ -338,7 +339,7 @@ export default async function seedDemoData({ container }: ExecArgs) {
           name: "Self-pickup",
           price_type: "flat",
           provider_id: "manual_manual",
-          service_zone_id: fulfillmentSet.service_zones[0].id,
+          service_zone_id: fulfillmentSet[0].service_zones[0].id,
           shipping_profile_id: shippingProfile!.id,
           type: {
             label: "Self-pickup",
@@ -360,7 +361,7 @@ export default async function seedDemoData({ container }: ExecArgs) {
     .flat();
 
   await createShippingOptionsWorkflow(container).run({
-    input: shippingOptionsInput,
+    input: shippingOptionsInput as CreateShippingOptionsWorkflowInput,
   });
   logger.info("Finished seeding fulfillment data.");
 
