@@ -36,11 +36,12 @@ const StripeWrapper: React.FC<StripeWrapperProps> = ({
     )
   }
 
-  if (!paymentSession?.data?.client_secret) {
-    throw new Error(
-      "Stripe client secret is missing. Cannot initialize Stripe."
-    )
-  }
+  // clientSecret can be undefined initially, Elements will handle it
+  // if (!paymentSession?.data?.client_secret) {
+  //   throw new Error(
+  //     "Stripe client secret is missing. Cannot initialize Stripe."
+  //   )
+  // }
 
   return (
     <StripeContext.Provider value={true}>

@@ -1,7 +1,7 @@
 import { Button, Heading } from "@medusajs/ui"
 import Link from "next/link"
 
-const Hero = () => {
+const Hero = ({ countryCode }: { countryCode: string }) => {
   return (
     <div
       className="h-screen w-full relative bg-cover bg-center"
@@ -24,7 +24,7 @@ const Hero = () => {
             Discover the latest trends and styles.
           </Heading>
         </span>
-        <Link href="/store">
+        <Link href={`/${countryCode}/store`}>
           <Button
             variant="transparent"
             className="text-xl border-2 border-white px-8 py-4 text-white"

@@ -19,6 +19,10 @@ const Nav = ({ cartButtonNode }: NavProps) => {
   const isHomePage = pathname.split("/").length <= 2
 
   useEffect(() => {
+    listRegions().then((regions) => setRegions(regions || []))
+  }, [])
+
+  useEffect(() => {
     if (!isHomePage) {
       setIsScrolled(true)
       return
@@ -36,7 +40,6 @@ const Nav = ({ cartButtonNode }: NavProps) => {
     }
 
     window.addEventListener("scroll", handleScroll)
-    listRegions().then((regions) => setRegions(regions || []))
 
     return () => {
       window.removeEventListener("scroll", handleScroll)

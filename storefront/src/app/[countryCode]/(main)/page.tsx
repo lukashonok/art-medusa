@@ -32,7 +32,7 @@ export default async function Home(props: {
 
   return (
     <>
-      <Hero />
+      <Hero countryCode={countryCode} />
       <ContentBlock
         image="https://picsum.photos/800/600?random=4"
         title="Timeless Designs"
