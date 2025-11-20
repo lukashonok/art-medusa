@@ -8,7 +8,7 @@ const DEFAULT_REGION = process.env.NEXT_PUBLIC_DEFAULT_REGION || "us"
 const regionMapCache = {
   regionMap: new Map<string, HttpTypes.StoreRegion>(),
   regionMapUpdated: Date.now(),
-  
+
 }
 
 async function getRegionMap(cacheId: string) {
@@ -25,6 +25,7 @@ async function getRegionMap(cacheId: string) {
     regionMapUpdated < Date.now() - 3600 * 1000
   ) {
     // Fetch regions from Medusa. We can't use the JS client here because middleware is running on Edge and the client needs a Node environment.
+    console.error(BACKEND_URL, `${BACKEND_URL}/store/regions`)
     const { regions } = await fetch(`${BACKEND_URL}/store/regions`, {
       headers: {
         "x-publishable-api-key": PUBLISHABLE_API_KEY!,
@@ -42,6 +43,8 @@ async function getRegionMap(cacheId: string) {
       }
 
       return json
+    }).catch(r => {
+      console.error(BACKEND_URL, `${BACKEND_URL}/store/regions`)
     })
 
     if (!regions?.length) {

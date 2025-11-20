@@ -5,4 +5,5 @@ export async function GET(
   res: MedusaResponse
 ) {
   res.sendStatus(200);
+
 }
