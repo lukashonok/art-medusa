@@ -13,7 +13,7 @@ services:
           cpus: 2
           memory: 1024M
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      - ./postgres-data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "medusa-starter"]
       interval: 10s
@@ -25,13 +25,9 @@ services:
     ports:
       - 6379:6379
     volumes:
-      - cache-backend-data:/data
+      - ./cache-backend-data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
-
-volumes:
-  postgres-data:
-  cache-backend-data:

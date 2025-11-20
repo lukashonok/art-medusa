@@ -12,6 +12,7 @@ import PaymentContainer, {
 import Divider from "@modules/common/components/divider"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useCallback, useEffect, useState } from "react"
+import BlikPayment from "../blik-payment"
 
 const Payment = ({
   cart,
@@ -104,6 +105,10 @@ const Payment = ({
     setError(null)
   }, [isOpen])
 
+  const isStripeCard = selectedPaymentMethod === "pp_stripe_stripe"
+  const isButtonDisabled =
+    (!selectedPaymentMethod && !paidByGiftcard) || (isStripeCard && !cardComplete)
+
   return (
     <div className="bg-white">
       <div className="flex flex-row items-center justify-between mb-6">
@@ -140,26 +145,46 @@ const Payment = ({
                 value={selectedPaymentMethod}
                 onChange={(value: string) => setPaymentMethod(value)}
               >
-                {availablePaymentMethods.map((paymentMethod) => (
-                  <div key={paymentMethod.id}>
-                    {isStripeLike(paymentMethod.id) ? (
-                      <StripeCardContainer
-                        paymentProviderId={paymentMethod.id}
-                        selectedPaymentOptionId={selectedPaymentMethod}
-                        paymentInfoMap={paymentInfoMap}
-                        setCardBrand={setCardBrand}
-                        setError={setError}
-                        setCardComplete={setCardComplete}
-                      />
-                    ) : (
-                      <PaymentContainer
-                        paymentInfoMap={paymentInfoMap}
-                        paymentProviderId={paymentMethod.id}
-                        selectedPaymentOptionId={selectedPaymentMethod}
-                      />
-                    )}
-                  </div>
-                ))}
+                {availablePaymentMethods.map((paymentMethod) => {
+                  let content: JSX.Element | null = null
+                  switch (paymentMethod.id) {
+                    case "pp_stripe_stripe":
+                      content = (
+                        <StripeCardContainer
+                          paymentProviderId={paymentMethod.id}
+                          selectedPaymentOptionId={selectedPaymentMethod}
+                          paymentInfoMap={paymentInfoMap}
+                          setCardBrand={setCardBrand}
+                          setError={setError}
+                          setCardComplete={setCardComplete}
+                        />
+                      )
+                      break
+                    case "pp_stripe-blik_stripe":
+                      content = (
+                        <PaymentContainer
+                          paymentInfoMap={paymentInfoMap}
+                          paymentProviderId={paymentMethod.id}
+                          selectedPaymentOptionId={selectedPaymentMethod}
+                        >
+                          {selectedPaymentMethod === paymentMethod.id && (
+                            <BlikPayment />
+                          )}
+                        </PaymentContainer>
+                      )
+                      break
+                    default:
+                      content = (
+                        <PaymentContainer
+                          paymentInfoMap={paymentInfoMap}
+                          paymentProviderId={paymentMethod.id}
+                          selectedPaymentOptionId={selectedPaymentMethod}
+                        />
+                      )
+                      break
+                  }
+                  return <div key={paymentMethod.id}>{content}</div>
+                })}
               </RadioGroup>
             </>
           )}
@@ -188,10 +213,7 @@ const Payment = ({
             className="mt-6"
             onClick={handleSubmit}
             isLoading={isLoading}
-            disabled={
-              (isStripeLike(selectedPaymentMethod) && !cardComplete) ||
-              (!selectedPaymentMethod && !paidByGiftcard)
-            }
+            disabled={isButtonDisabled}
             data-testid="submit-payment-button"
           >
             {!activeSession && isStripeLike(selectedPaymentMethod)

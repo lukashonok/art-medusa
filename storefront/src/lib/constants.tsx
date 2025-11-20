@@ -3,6 +3,7 @@ import { CreditCard } from "@medusajs/icons"
 
 import Ideal from "@modules/common/icons/ideal"
 import Bancontact from "@modules/common/icons/bancontact"
+import Blik from "@modules/common/icons/blik"
 import PayPal from "@modules/common/icons/paypal"
 
 /* Map of payment provider_id to their title and icon. Add in any payment providers you want to use. */
@@ -13,6 +14,10 @@ export const paymentInfoMap: Record<
   pp_stripe_stripe: {
     title: "Credit card",
     icon: <CreditCard />,
+  },
+  "pp_stripe-blik_stripe": {
+    title: "BLIK",
+    icon: <Blik />,
   },
   "pp_medusa-payments_default": {
     title: "Credit card",
@@ -40,7 +45,7 @@ export const paymentInfoMap: Record<
 // This only checks if it is native stripe or medusa payments for card payments, it ignores the other stripe-based providers
 export const isStripeLike = (providerId?: string) => {
   return (
-    providerId?.startsWith("pp_stripe_") || providerId?.startsWith("pp_medusa-")
+    providerId?.startsWith("pp_stripe") || providerId?.startsWith("pp_medusa-")
   )
 }
 

@@ -1,18 +1,66 @@
-import { Suspense } from "react"
+"use client"
 
+import { Suspense, useEffect, useState } from "react"
+import { usePathname } from "next/navigation"
 import { listRegions } from "@lib/data/regions"
 import { StoreRegion } from "@medusajs/types"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
-import CartButton from "@modules/layout/components/cart-button"
 import SideMenu from "@modules/layout/components/side-menu"
 
-export default async function Nav() {
-  const regions = await listRegions().then((regions: StoreRegion[]) => regions)
+type NavProps = {
+  cartButtonNode: React.ReactNode
+}
+
+const Nav = ({ cartButtonNode }: NavProps) => {
+  const pathname = usePathname()
+  const [isScrolled, setIsScrolled] = useState(false)
+  const [regions, setRegions] = useState<StoreRegion[]>([])
+
+  const isHomePage = pathname.split("/").length <= 2
+
+  useEffect(() => {
+    if (!isHomePage) {
+      setIsScrolled(true)
+      return
+    }
+
+    setIsScrolled(false) // Explicitly set to false when on home page
+
+    const handleScroll = () => {
+      const offset = window.scrollY
+      if (offset > 50) {
+        setIsScrolled(true)
+      } else {
+        setIsScrolled(false)
+      }
+    }
+
+    window.addEventListener("scroll", handleScroll)
+    listRegions().then((regions) => setRegions(regions || []))
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll)
+    }
+  }, [isHomePage])
 
   return (
-    <div className="sticky top-0 inset-x-0 z-50 group">
-      <header className="relative h-16 mx-auto border-b duration-200 bg-white border-ui-border-base">
-        <nav className="content-container txt-xsmall-plus text-ui-fg-subtle flex items-center justify-between w-full h-full text-small-regular">
+    <div
+      className={`fixed top-0 inset-x-0 z-50 group ${
+        isScrolled || !isHomePage ? "bg-white" : "bg-transparent"
+      }`}
+    >
+      <header
+        className={`relative h-16 mx-auto border-b duration-200 ${
+          isScrolled || !isHomePage
+            ? "border-ui-border-base"
+            : "border-transparent"
+        }`}
+      >
+        <nav
+          className={`content-container txt-xsmall-plus text-ui-fg-subtle flex items-center justify-between w-full h-full text-small-regular ${
+            isScrolled || !isHomePage ? "text-ui-fg-subtle" : "text-white"
+          }`}
+        >
           <div className="flex-1 basis-0 h-full flex items-center">
             <div className="h-full">
               <SideMenu regions={regions} />
@@ -39,22 +87,12 @@ export default async function Nav() {
                 Account
               </LocalizedClientLink>
             </div>
-            <Suspense
-              fallback={
-                <LocalizedClientLink
-                  className="hover:text-ui-fg-base flex gap-2"
-                  href="/cart"
-                  data-testid="nav-cart-link"
-                >
-                  Cart (0)
-                </LocalizedClientLink>
-              }
-            >
-              <CartButton />
-            </Suspense>
+            {cartButtonNode}
           </div>
         </nav>
       </header>
     </div>
   )
 }
+
+export default Nav

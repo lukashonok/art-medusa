@@ -7,7 +7,9 @@ import { StoreCartShippingOption } from "@medusajs/types"
 import CartMismatchBanner from "@modules/layout/components/cart-mismatch-banner"
 import Footer from "@modules/layout/templates/footer"
 import Nav from "@modules/layout/templates/nav"
+import CartButton from "@modules/layout/components/cart-button"
 import FreeShippingPriceNudge from "@modules/shipping/components/free-shipping-price-nudge"
+import MainContentWrapper from "@modules/layout/components/main-content-wrapper"
 
 export const metadata: Metadata = {
   metadataBase: new URL(getBaseURL()),
@@ -26,7 +28,7 @@ export default async function PageLayout(props: { children: React.ReactNode }) {
 
   return (
     <>
-      <Nav />
+      <Nav cartButtonNode={<CartButton />} />
       {customer && cart && (
         <CartMismatchBanner customer={customer} cart={cart} />
       )}
@@ -38,7 +40,7 @@ export default async function PageLayout(props: { children: React.ReactNode }) {
           shippingOptions={shippingOptions}
         />
       )}
-      {props.children}
+      <MainContentWrapper>{props.children}</MainContentWrapper>
       <Footer />
     </>
   )

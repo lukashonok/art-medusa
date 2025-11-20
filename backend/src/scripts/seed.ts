@@ -62,7 +62,10 @@ export default async function seedDemoData({ container }: ExecArgs) {
   const salesChannelModuleService = container.resolve(Modules.SALES_CHANNEL);
   const storeModuleService = container.resolve(Modules.STORE);
 
-  const countries = ["gb", "de", "dk", "se", "fr", "es", "it"];
+  const europeCountries = ["de", "it", "gb", "fr", "dk"];
+  const usCountries = ["us"];
+  const plCountries = ["pl"];
+  const allCountries = [...europeCountries, ...usCountries, ...plCountries];
 
   logger.info("Seeding store data...");
   const [store] = await storeModuleService.listStores();
@@ -97,6 +100,9 @@ export default async function seedDemoData({ container }: ExecArgs) {
         {
           currency_code: "usd",
         },
+        {
+          currency_code: "pln",
+        },
       ],
     },
   });
@@ -110,24 +116,35 @@ export default async function seedDemoData({ container }: ExecArgs) {
     },
   });
   logger.info("Seeding region data...");
-  const { result: regionResult } = await createRegionsWorkflow(container).run({
+  await createRegionsWorkflow(container).run({
     input: {
       regions: [
         {
           name: "Europe",
           currency_code: "eur",
-          countries,
+          countries: europeCountries,
+          payment_providers: ["pp_system_default"],
+        },
+        {
+          name: "US",
+          currency_code: "usd",
+          countries: usCountries,
+          payment_providers: ["pp_system_default"],
+        },
+        {
+          name: "PL",
+          currency_code: "pln",
+          countries: plCountries,
           payment_providers: ["pp_system_default"],
         },
       ],
     },
   });
-  const region = regionResult[0];
   logger.info("Finished seeding regions.");
 
   logger.info("Seeding tax regions...");
   await createTaxRegionsWorkflow(container).run({
-    input: countries.map((country_code) => ({
+    input: allCountries.map((country_code) => ({
       country_code,
       provider_id: "tp_system",
     })),
@@ -141,35 +158,55 @@ export default async function seedDemoData({ container }: ExecArgs) {
     input: {
       locations: [
         {
-          name: "European Warehouse",
+          name: "Art House Europe",
           address: {
-            city: "Copenhagen",
-            country_code: "DK",
-            address_1: "",
+            city: "Berlin",
+            country_code: "DE",
+            address_1: "Kunststrasse 1",
+          },
+        },
+        {
+          name: "Art House US",
+          address: {
+            city: "New York",
+            country_code: "US",
+            address_1: "1 Art Plaza",
+          },
+        },
+        {
+          name: "Art House PL",
+          address: {
+            city: "Warsaw",
+            country_code: "PL",
+            address_1: "Artystyczna 1",
           },
         },
       ],
     },
   });
-  const stockLocation = stockLocationResult[0];
+  const europeanStockLocation = stockLocationResult.find(
+    (sl) => sl.name === "Art House Europe"
+  )!;
 
   await updateStoresWorkflow(container).run({
     input: {
       selector: { id: store.id },
       update: {
-        default_location_id: stockLocation.id,
+        default_location_id: europeanStockLocation.id,
       },
     },
   });
 
-  await link.create({
-    [Modules.STOCK_LOCATION]: {
-      stock_location_id: stockLocation.id,
-    },
-    [Modules.FULFILLMENT]: {
-      fulfillment_provider_id: "manual_manual",
-    },
-  });
+  for (const stockLocation of stockLocationResult) {
+    await link.create({
+      [Modules.STOCK_LOCATION]: {
+        stock_location_id: stockLocation.id,
+      },
+      [Modules.FULFILLMENT]: {
+        fulfillment_provider_id: "manual_manual",
+      },
+    });
+  }
 
   logger.info("Seeding fulfillment data...");
   const shippingProfiles = await fulfillmentModuleService.listShippingProfiles({
@@ -192,143 +229,149 @@ export default async function seedDemoData({ container }: ExecArgs) {
     shippingProfile = shippingProfileResult[0];
   }
 
-  const fulfillmentSet = await fulfillmentModuleService.createFulfillmentSets({
-    name: "European Warehouse delivery",
+  const fulfillmentSetEurope = await fulfillmentModuleService.createFulfillmentSets({
+    name: "Europe Delivery",
     type: "shipping",
     service_zones: [
       {
         name: "Europe",
-        geo_zones: [
-          {
-            country_code: "gb",
-            type: "country",
-          },
-          {
-            country_code: "de",
-            type: "country",
-          },
-          {
-            country_code: "dk",
-            type: "country",
-          },
-          {
-            country_code: "se",
-            type: "country",
-          },
-          {
-            country_code: "fr",
-            type: "country",
-          },
-          {
-            country_code: "es",
-            type: "country",
-          },
-          {
-            country_code: "it",
-            type: "country",
-          },
-        ],
+        geo_zones: europeCountries.map((code) => ({
+          country_code: code,
+          type: "country",
+        })),
       },
     ],
   });
 
-  await link.create({
-    [Modules.STOCK_LOCATION]: {
-      stock_location_id: stockLocation.id,
-    },
-    [Modules.FULFILLMENT]: {
-      fulfillment_set_id: fulfillmentSet.id,
-    },
+  const fulfillmentSetUS = await fulfillmentModuleService.createFulfillmentSets({
+    name: "US Delivery",
+    type: "shipping",
+    service_zones: [
+      {
+        name: "US",
+        geo_zones: usCountries.map((code) => ({
+          country_code: code,
+          type: "country",
+        })),
+      },
+    ],
   });
+
+  const fulfillmentSetPL = await fulfillmentModuleService.createFulfillmentSets({
+    name: "PL Delivery",
+    type: "shipping",
+    service_zones: [
+      {
+        name: "PL",
+        geo_zones: plCountries.map((code) => ({
+          country_code: code,
+          type: "country",
+        })),
+      },
+    ],
+  });
+
+  const fulfillmentSets = [
+    fulfillmentSetEurope,
+    fulfillmentSetUS,
+    fulfillmentSetPL,
+  ];
+
+  await link.create([
+    {
+      [Modules.STOCK_LOCATION]: {
+        stock_location_id: stockLocationResult.find(
+          (sl) => sl.name === "Art House Europe"
+        )!.id,
+      },
+      [Modules.FULFILLMENT]: {
+        fulfillment_set_id: fulfillmentSetEurope.id,
+      },
+    },
+    {
+      [Modules.STOCK_LOCATION]: {
+        stock_location_id: stockLocationResult.find(
+          (sl) => sl.name === "Art House US"
+        )!.id,
+      },
+      [Modules.FULFILLMENT]: {
+        fulfillment_set_id: fulfillmentSetUS.id,
+      },
+    },
+    {
+      [Modules.STOCK_LOCATION]: {
+        stock_location_id: stockLocationResult.find(
+          (sl) => sl.name === "Art House PL"
+        )!.id,
+      },
+      [Modules.FULFILLMENT]: {
+        fulfillment_set_id: fulfillmentSetPL.id,
+      },
+    },
+  ]);
+
+  const shippingOptionsInput = fulfillmentSets
+    .map((fulfillmentSet) => {
+      return [
+        {
+          name: "Standard Delivery",
+          price_type: "flat",
+          provider_id: "manual_manual",
+          service_zone_id: fulfillmentSet.service_zones[0].id,
+          shipping_profile_id: shippingProfile!.id,
+          type: {
+            label: "Standard",
+            description: "Free standard delivery.",
+            code: "standard",
+          },
+          prices: [
+            { currency_code: "eur", amount: 0 },
+            { currency_code: "usd", amount: 0 },
+            { currency_code: "pln", amount: 0 },
+          ],
+          rules: [
+            { attribute: "enabled_in_store", value: "true", operator: "eq" },
+            { attribute: "is_return", value: "false", operator: "eq" },
+          ],
+        },
+        {
+          name: "Self-pickup",
+          price_type: "flat",
+          provider_id: "manual_manual",
+          service_zone_id: fulfillmentSet.service_zones[0].id,
+          shipping_profile_id: shippingProfile!.id,
+          type: {
+            label: "Self-pickup",
+            description: "Pick up your order at our location.",
+            code: "self-pickup",
+          },
+          prices: [
+            { currency_code: "eur", amount: 0 },
+            { currency_code: "usd", amount: 0 },
+            { currency_code: "pln", amount: 0 },
+          ],
+          rules: [
+            { attribute: "enabled_in_store", value: "true", operator: "eq" },
+            { attribute: "is_return", value: "false", operator: "eq" },
+          ],
+        },
+      ];
+    })
+    .flat();
 
   await createShippingOptionsWorkflow(container).run({
-    input: [
-      {
-        name: "Standard Shipping",
-        price_type: "flat",
-        provider_id: "manual_manual",
-        service_zone_id: fulfillmentSet.service_zones[0].id,
-        shipping_profile_id: shippingProfile.id,
-        type: {
-          label: "Standard",
-          description: "Ship in 2-3 days.",
-          code: "standard",
-        },
-        prices: [
-          {
-            currency_code: "usd",
-            amount: 10,
-          },
-          {
-            currency_code: "eur",
-            amount: 10,
-          },
-          {
-            region_id: region.id,
-            amount: 10,
-          },
-        ],
-        rules: [
-          {
-            attribute: "enabled_in_store",
-            value: "true",
-            operator: "eq",
-          },
-          {
-            attribute: "is_return",
-            value: "false",
-            operator: "eq",
-          },
-        ],
-      },
-      {
-        name: "Express Shipping",
-        price_type: "flat",
-        provider_id: "manual_manual",
-        service_zone_id: fulfillmentSet.service_zones[0].id,
-        shipping_profile_id: shippingProfile.id,
-        type: {
-          label: "Express",
-          description: "Ship in 24 hours.",
-          code: "express",
-        },
-        prices: [
-          {
-            currency_code: "usd",
-            amount: 10,
-          },
-          {
-            currency_code: "eur",
-            amount: 10,
-          },
-          {
-            region_id: region.id,
-            amount: 10,
-          },
-        ],
-        rules: [
-          {
-            attribute: "enabled_in_store",
-            value: "true",
-            operator: "eq",
-          },
-          {
-            attribute: "is_return",
-            value: "false",
-            operator: "eq",
-          },
-        ],
-      },
-    ],
+    input: shippingOptionsInput,
   });
   logger.info("Finished seeding fulfillment data.");
 
-  await linkSalesChannelsToStockLocationWorkflow(container).run({
-    input: {
-      id: stockLocation.id,
-      add: [defaultSalesChannel[0].id],
-    },
-  });
+  for (const stockLocation of stockLocationResult) {
+    await linkSalesChannelsToStockLocationWorkflow(container).run({
+      input: {
+        id: stockLocation.id,
+        add: [defaultSalesChannel[0].id],
+      },
+    });
+  }
   logger.info("Finished seeding stock location data.");
 
   logger.info("Seeding publishable API key data...");
@@ -363,19 +406,11 @@ export default async function seedDemoData({ container }: ExecArgs) {
     input: {
       product_categories: [
         {
-          name: "Shirts",
+          name: "Interior design",
           is_active: true,
         },
         {
-          name: "Sweatshirts",
-          is_active: true,
-        },
-        {
-          name: "Pants",
-          is_active: true,
-        },
-        {
-          name: "Merch",
+          name: "Photos",
           is_active: true,
         },
       ],
@@ -386,183 +421,38 @@ export default async function seedDemoData({ container }: ExecArgs) {
     input: {
       products: [
         {
-          title: "Medusa T-Shirt",
+          title: "Abstract Canvas Art 'Colors of Life'",
           category_ids: [
-            categoryResult.find((cat) => cat.name === "Shirts")!.id,
+            categoryResult.find((cat) => cat.name === "Interior design")!.id,
           ],
           description:
-            "Reimagine the feeling of a classic T-shirt. With our cotton T-shirts, everyday essentials no longer have to be ordinary.",
-          handle: "t-shirt",
-          weight: 400,
+            "A vibrant and colorful abstract painting on canvas. Perfect to bring life to any room.",
+          handle: "abstract-canvas-art-colors-of-life",
+          weight: 1500,
           status: ProductStatus.PUBLISHED,
-          shipping_profile_id: shippingProfile.id,
+          shipping_profile_id: shippingProfile!.id,
           images: [
             {
-              url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/tee-black-front.png",
-            },
-            {
-              url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/tee-black-back.png",
-            },
-            {
-              url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/tee-white-front.png",
-            },
-            {
-              url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/tee-white-back.png",
+              url: "https://m.media-amazon.com/images/I/8148UrepONL._AC_SX679_.jpg",
             },
           ],
           options: [
             {
               title: "Size",
-              values: ["S", "M", "L", "XL"],
-            },
-            {
-              title: "Color",
-              values: ["Black", "White"],
+              values: ["One Size"],
             },
           ],
           variants: [
             {
-              title: "S / Black",
-              sku: "SHIRT-S-BLACK",
+              title: "One Size",
+              sku: "ART-ABSTRACT-01",
               options: {
-                Size: "S",
-                Color: "Black",
+                Size: "One Size",
               },
               prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "S / White",
-              sku: "SHIRT-S-WHITE",
-              options: {
-                Size: "S",
-                Color: "White",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "M / Black",
-              sku: "SHIRT-M-BLACK",
-              options: {
-                Size: "M",
-                Color: "Black",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "M / White",
-              sku: "SHIRT-M-WHITE",
-              options: {
-                Size: "M",
-                Color: "White",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "L / Black",
-              sku: "SHIRT-L-BLACK",
-              options: {
-                Size: "L",
-                Color: "Black",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "L / White",
-              sku: "SHIRT-L-WHITE",
-              options: {
-                Size: "L",
-                Color: "White",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "XL / Black",
-              sku: "SHIRT-XL-BLACK",
-              options: {
-                Size: "XL",
-                Color: "Black",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "XL / White",
-              sku: "SHIRT-XL-WHITE",
-              options: {
-                Size: "XL",
-                Color: "White",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
+                { amount: 250, currency_code: "eur" },
+                { amount: 275, currency_code: "usd" },
+                { amount: 1100, currency_code: "pln" },
               ],
             },
           ],
@@ -573,97 +463,38 @@ export default async function seedDemoData({ container }: ExecArgs) {
           ],
         },
         {
-          title: "Medusa Sweatshirt",
+          title: "Modern Metal Sculpture 'The Thinker'",
           category_ids: [
-            categoryResult.find((cat) => cat.name === "Sweatshirts")!.id,
+            categoryResult.find((cat) => cat.name === "Interior design")!.id,
           ],
           description:
-            "Reimagine the feeling of a classic sweatshirt. With our cotton sweatshirt, everyday essentials no longer have to be ordinary.",
-          handle: "sweatshirt",
-          weight: 400,
+            "A modern interpretation of a classic sculpture, crafted from polished metal.",
+          handle: "modern-metal-sculpture-the-thinker",
+          weight: 5000,
           status: ProductStatus.PUBLISHED,
-          shipping_profile_id: shippingProfile.id,
+          shipping_profile_id: shippingProfile!.id,
           images: [
             {
-              url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/sweatshirt-vintage-front.png",
-            },
-            {
-              url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/sweatshirt-vintage-back.png",
+              url: "https://api.nga.gov/iiif/a709486d-3e3a-4491-bf9e-59d3c4f37fb7/full/!800,800/0/default.jpg",
             },
           ],
           options: [
             {
               title: "Size",
-              values: ["S", "M", "L", "XL"],
+              values: ["One Size"],
             },
           ],
           variants: [
             {
-              title: "S",
-              sku: "SWEATSHIRT-S",
+              title: "One Size",
+              sku: "ART-SCULPTURE-01",
               options: {
-                Size: "S",
+                Size: "One Size",
               },
               prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "M",
-              sku: "SWEATSHIRT-M",
-              options: {
-                Size: "M",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "L",
-              sku: "SWEATSHIRT-L",
-              options: {
-                Size: "L",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "XL",
-              sku: "SWEATSHIRT-XL",
-              options: {
-                Size: "XL",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
+                { amount: 450, currency_code: "eur" },
+                { amount: 500, currency_code: "usd" },
+                { amount: 2000, currency_code: "pln" },
               ],
             },
           ],
@@ -674,97 +505,38 @@ export default async function seedDemoData({ container }: ExecArgs) {
           ],
         },
         {
-          title: "Medusa Sweatpants",
+          title: "Black and White Photo 'Urban Silence'",
           category_ids: [
-            categoryResult.find((cat) => cat.name === "Pants")!.id,
+            categoryResult.find((cat) => cat.name === "Photos")!.id,
           ],
           description:
-            "Reimagine the feeling of classic sweatpants. With our cotton sweatpants, everyday essentials no longer have to be ordinary.",
-          handle: "sweatpants",
-          weight: 400,
+            "A stunning black and white photograph capturing a moment of silence in a bustling city.",
+          handle: "bw-photo-urban-silence",
+          weight: 500,
           status: ProductStatus.PUBLISHED,
-          shipping_profile_id: shippingProfile.id,
+          shipping_profile_id: shippingProfile!.id,
           images: [
             {
-              url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/sweatpants-gray-front.png",
-            },
-            {
-              url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/sweatpants-gray-back.png",
+              url: "https://media.printler.com/media/photo/350948.jpg",
             },
           ],
           options: [
             {
               title: "Size",
-              values: ["S", "M", "L", "XL"],
+              values: ["One Size"],
             },
           ],
           variants: [
             {
-              title: "S",
-              sku: "SWEATPANTS-S",
+              title: "One Size",
+              sku: "PHOTO-BW-01",
               options: {
-                Size: "S",
+                Size: "One Size",
               },
               prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "M",
-              sku: "SWEATPANTS-M",
-              options: {
-                Size: "M",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "L",
-              sku: "SWEATPANTS-L",
-              options: {
-                Size: "L",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "XL",
-              sku: "SWEATPANTS-XL",
-              options: {
-                Size: "XL",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
+                { amount: 120, currency_code: "eur" },
+                { amount: 130, currency_code: "usd" },
+                { amount: 520, currency_code: "pln" },
               ],
             },
           ],
@@ -775,97 +547,38 @@ export default async function seedDemoData({ container }: ExecArgs) {
           ],
         },
         {
-          title: "Medusa Shorts",
+          title: "Nature Photo 'Misty Mountains'",
           category_ids: [
-            categoryResult.find((cat) => cat.name === "Merch")!.id,
+            categoryResult.find((cat) => cat.name === "Photos")!.id,
           ],
           description:
-            "Reimagine the feeling of classic shorts. With our cotton shorts, everyday essentials no longer have to be ordinary.",
-          handle: "shorts",
-          weight: 400,
+            "A breathtaking photograph of mountains shrouded in mist at sunrise.",
+          handle: "nature-photo-misty-mountains",
+          weight: 500,
           status: ProductStatus.PUBLISHED,
-          shipping_profile_id: shippingProfile.id,
+          shipping_profile_id: shippingProfile!.id,
           images: [
             {
-              url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/shorts-vintage-front.png",
-            },
-            {
-              url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/shorts-vintage-back.png",
+              url: "https://images.stockcake.com/public/f/f/a/ffa4d173-c203-49ee-82c4-12879616129d_large/misty-mountain-peaks-stockcake.jpg",
             },
           ],
           options: [
             {
               title: "Size",
-              values: ["S", "M", "L", "XL"],
+              values: ["One Size"],
             },
           ],
           variants: [
             {
-              title: "S",
-              sku: "SHORTS-S",
+              title: "One Size",
+              sku: "PHOTO-NATURE-01",
               options: {
-                Size: "S",
+                Size: "One Size",
               },
               prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "M",
-              sku: "SHORTS-M",
-              options: {
-                Size: "M",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "L",
-              sku: "SHORTS-L",
-              options: {
-                Size: "L",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "XL",
-              sku: "SHORTS-XL",
-              options: {
-                Size: "XL",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
+                { amount: 120, currency_code: "eur" },
+                { amount: 130, currency_code: "usd" },
+                { amount: 520, currency_code: "pln" },
               ],
             },
           ],
@@ -888,13 +601,15 @@ export default async function seedDemoData({ container }: ExecArgs) {
   });
 
   const inventoryLevels: CreateInventoryLevelInput[] = [];
-  for (const inventoryItem of inventoryItems) {
-    const inventoryLevel = {
-      location_id: stockLocation.id,
-      stocked_quantity: 1000000,
-      inventory_item_id: inventoryItem.id,
-    };
-    inventoryLevels.push(inventoryLevel);
+  for (const stockLocation of stockLocationResult) {
+    for (const inventoryItem of inventoryItems) {
+      const inventoryLevel = {
+        location_id: stockLocation.id,
+        stocked_quantity: 1, // Changed to 1 as per user request
+        inventory_item_id: inventoryItem.id,
+      };
+      inventoryLevels.push(inventoryLevel);
+    }
   }
 
   await createInventoryLevelsWorkflow(container).run({
